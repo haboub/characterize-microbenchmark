@@ -45,9 +45,6 @@
 /* Include all implementations declarations */
 #include "impl/ref.h"
 #include "impl/naive.h"
-#include "impl/opt.h"
-#include "impl/vec.h"
-#include "impl/para.h"
 
 /* Include common headers */
 #include "common/types.h"
@@ -75,10 +72,7 @@ int main(int argc, char** argv)
 
   /* Parse arguments */
   /* Function pointers */
-  void* (*impl_scalar_naive_ptr)(void* args) = impl_scalar_naive;
-  void* (*impl_scalar_opt_ptr  )(void* args) = impl_scalar_opt;
-  void* (*impl_vector_ptr      )(void* args) = impl_vector;
-  void* (*impl_parallel_ptr    )(void* args) = impl_parallel;
+  void* (*impl_mmult_naive_ptr)(void* args) = impl_mmult_naive;
 
   /* Chosen */
   void* (*impl)(void* args) = NULL;
@@ -90,13 +84,7 @@ int main(int argc, char** argv)
     if (strcmp(argv[i], "-i") == 0 || strcmp(argv[i], "--impl") == 0) {
       assert (++i < argc);
       if (strcmp(argv[i], "naive") == 0) {
-        impl = impl_scalar_naive_ptr; impl_str = "scalar_naive";
-      } else if (strcmp(argv[i], "opt"  ) == 0) {
-        impl = impl_scalar_opt_ptr  ; impl_str = "scalar_opt"  ;
-      } else if (strcmp(argv[i], "vec"  ) == 0) {
-        impl = impl_vector_ptr      ; impl_str = "vectorized"  ;
-      } else if (strcmp(argv[i], "para" ) == 0) {
-        impl = impl_parallel_ptr    ; impl_str = "parallelized";
+        impl = impl_mmult_naive_ptr; impl_str = "mmult_naive";
       } else {
         impl = NULL                 ; impl_str = "unknown"     ;
       }
