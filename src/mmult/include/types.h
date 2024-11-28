@@ -10,8 +10,13 @@
 #define __INCLUDE_TYPES_H_
 
 typedef struct {
-  byte*   input;
-  byte*   output;
+  byte* input_a;
+  byte* input_b;
+  byte* output;
+
+  size_t rowsA;
+  size_t colsA;
+  size_t colsB;
 
   size_t size;
 

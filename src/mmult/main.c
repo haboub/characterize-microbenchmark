@@ -54,6 +54,9 @@
 #include "include/types.h"
 
 const int SIZE_DATA = 4 * 1024 * 1024;
+const int A_ROW = 10;  // Number of rows for Matrix A
+const int A_COL_B_ROW = 10;  // Number of columns for Matrix A and rows for Matrix B
+const int B_COL = 10;  // Number of columns for Matrix B
 
 int main(int argc, char** argv)
 {
@@ -64,11 +67,16 @@ int main(int argc, char** argv)
   int nthreads = 1;
   int cpu      = 0;
 
-  int nruns    = 10000;
+  int nruns    = 1000000;
   int nstdevs  = 3;
 
   /* Data */
-  int data_size = SIZE_DATA;
+  int mA_rows = A_ROW;
+  int mAB_cols_rows = A_COL_B_ROW;
+  int mB_cols = B_COL;
+  int matrix_a_data_size = A_ROW * A_COL_B_ROW * sizeof(int);
+  int matrix_b_data_size = A_COL_B_ROW * B_COL * sizeof(int);
+  int data_size = A_ROW * B_COL * sizeof(int);
 
   /* Parse arguments */
   /* Function pointers */
@@ -92,12 +100,25 @@ int main(int argc, char** argv)
       continue;
     }
 
-    /* Input/output data size */
-    if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--size") == 0) {
-      assert (++i < argc);
-      data_size = atoi(argv[i]);
+    /* Rows of Matrix A */
+    if (strcmp(argv[i], "-ar") == 0 || strcmp(argv[i], "--arows") == 0) {
+        assert(++i < argc);
+        mA_rows = atoi(argv[i]);
+        continue;
+    }
 
-      continue;
+    /* Shared Dimension (columns of A and rows of B) */
+    if (strcmp(argv[i], "-acbr") == 0 || strcmp(argv[i], "--acolsnbrows") == 0) {
+        assert(++i < argc);
+        mAB_cols_rows = atoi(argv[i]);
+        continue;
+    }
+
+    /* Columns of Matrix B */
+    if (strcmp(argv[i], "-bc") == 0 || strcmp(argv[i], "--bcols") == 0) {
+        assert(++i < argc);
+        mB_cols = atoi(argv[i]);
+        continue;
     }
 
     /* Run parameterization */
@@ -153,13 +174,15 @@ int main(int argc, char** argv)
     printf("  %s {-i | --impl} impl_str [Options]\n", argv[0]);
     printf("  \n");
     printf("  Required:\n");
-    printf("    -i | --impl      Available implementations = {naive, opt, vec, para}\n");
+    printf("    -i    | --impl      Available implementations = {naive}\n");
     printf("    \n");
     printf("  Options:\n");
-    printf("    -h | --help      Print this message\n");
-    printf("    -n | --nthreads  Set number of threads available (default = %d)\n", nthreads);
-    printf("    -c | --cpu       Set the main CPU for the program (default = %d)\n", cpu);
-    printf("    -s | --size      Size of input and output data (default = %d)\n", data_size);
+    printf("    -h    | --help      Print this message\n");
+    printf("    -n    | --nthreads  Set number of threads available (default = %d)\n", nthreads);
+    printf("    -c    | --cpu       Set the main CPU for the program (default = %d)\n", cpu);
+    printf("    -ar   | --arows      Size of input and output data (default = %d)\n", mA_rows);
+    printf("    -abbr | --acolsnbrows      Size of input and output data (default = %d)\n", mAB_cols_rows);
+    printf("    -bc   | --bcols      Size of input and output data (default = %d)\n", mB_cols);
     printf("         --nruns     Number of runs to the implementation (default = %d)\n", nruns);
     printf("         --stdevs    Number of standard deviation to exclude outliers (default = %d)\n", nstdevs);
     printf("\n");
@@ -228,9 +251,10 @@ int main(int argc, char** argv)
 
   /* Datasets */
   /* Allocation and initialization */
-  byte* src   = __ALLOC_INIT_DATA(byte, data_size + 0);
-  byte* ref   = __ALLOC_INIT_DATA(byte, data_size + 4);
-  byte* dest  = __ALLOC_DATA     (byte, data_size + 4);
+  byte* src1 = __ALLOC_INIT_DATA(byte, matrix_a_data_size);
+  byte* src2 = __ALLOC_INIT_DATA(byte, matrix_b_data_size);
+  byte* ref  = __ALLOC_INIT_DATA(byte, data_size + 4);
+  byte* dest = __ALLOC_DATA(byte, data_size);
 
   /* Setting a guards, which is 0xdeadcafe.
      The guard should not change or be touched. */
@@ -242,8 +266,12 @@ int main(int argc, char** argv)
   args_t args_ref;
 
   args_ref.size     = data_size;
-  args_ref.input    = src;
   args_ref.output   = ref;
+  args_ref.input_a  = src1;
+  args_ref.input_b  = src2;
+  args_ref.rowsA    = mA_rows;
+  args_ref.colsA    = mAB_cols_rows;
+  args_ref.colsB    = mB_cols;
 
   args_ref.cpu      = cpu;
   args_ref.nthreads = nthreads;
@@ -256,7 +284,11 @@ int main(int argc, char** argv)
   args_t args;
 
   args.size     = data_size;
-  args.input    = src;
+  args.rowsA    = mA_rows;
+  args.colsA    = mAB_cols_rows;
+  args.colsB    = mB_cols;
+  args.input_a  = src1;
+  args.input_b  = src2;
   args.output   = dest;
 
   args.cpu      = cpu;
@@ -405,7 +437,8 @@ int main(int argc, char** argv)
   printf("\n");
 
   /* Manage memory */
-  free(src);
+  free(src1);
+  free(src2);
   free(dest);
   free(ref);
 
