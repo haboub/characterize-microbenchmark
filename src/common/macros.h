@@ -97,6 +97,14 @@
   ((byte*)array)[sz + 3] = 0xde;                       \
 }
 
+#define __SET_FLOAT_GUARD(array, sz) {                       \
+  byte* guard_ptr = (byte*)array + (sz * sizeof(float));\
+  guard_ptr[0] = 0xfe;                                 \
+  guard_ptr[1] = 0xca;                                 \
+  guard_ptr[2] = 0xad;                                 \
+  guard_ptr[3] = 0xde;                                 \
+}
+
 #define __CHECK_MATCH(ref, array, sz) ({               \
   bool __tmp = true;                                   \
                                                        \
@@ -125,6 +133,16 @@
   match = match && (((byte*)array)[sz + 2] == 0xad);   \
   match = match && (((byte*)array)[sz + 3] == 0xde);   \
                                                        \
+  match;                                               \
+})
+
+#define __CHECK_FLOAT_GUARD(array, sz) ({                    \
+  bool match = true;                                   \
+  byte* guard_ptr = (byte*)array + (sz * sizeof(float));\
+  match = match && (guard_ptr[0] == 0xfe);             \
+  match = match && (guard_ptr[1] == 0xca);             \
+  match = match && (guard_ptr[2] == 0xad);             \
+  match = match && (guard_ptr[3] == 0xde);             \
   match;                                               \
 })
 
