@@ -45,6 +45,7 @@
 /* Include all implementations declarations */
 #include "impl/ref.h"
 #include "impl/naive.h"
+#include "impl/opt.h"
 
 /* Include common headers */
 #include "common/types.h"
@@ -53,10 +54,9 @@
 /* Include application-specific headers */
 #include "include/types.h"
 
-const int SIZE_DATA = 4 * 1024 * 1024;
-const int A_ROW = 10;  // Number of rows for Matrix A
-const int A_COL_B_ROW = 10;  // Number of columns for Matrix A and rows for Matrix B
-const int B_COL = 10;  // Number of columns for Matrix B
+const int A_ROW = 25000;  // Number of rows for Matrix A
+const int A_COL_B_ROW = 30000;  // Number of columns for Matrix A and rows for Matrix B
+const int B_COL = 20000;  // Number of columns for Matrix B
 
 int main(int argc, char** argv)
 {
@@ -67,19 +67,20 @@ int main(int argc, char** argv)
   int nthreads = 1;
   int cpu      = 0;
 
-  int nruns    = 1000000;
+  int nruns    = 1000;
   int nstdevs  = 3;
 
   /* Data */
   int mA_rows = A_ROW;
   int mAB_cols_rows = A_COL_B_ROW;
   int mB_cols = B_COL;
-  int matrix_a_data_size = A_ROW * A_COL_B_ROW * sizeof(int);
-  int matrix_b_data_size = A_COL_B_ROW * B_COL * sizeof(int);
-  int data_size = A_ROW * B_COL * sizeof(int);
+  int matrix_a_data_size = A_ROW * A_COL_B_ROW;
+  int matrix_b_data_size = A_COL_B_ROW * B_COL;
+  int data_size = A_ROW * B_COL;
 
   /* Parse arguments */
   /* Function pointers */
+  void* (*impl_mmult_opt_ptr  )(void* args) = impl_mmult_opt;
   void* (*impl_mmult_naive_ptr)(void* args) = impl_mmult_naive;
 
   /* Chosen */
@@ -93,6 +94,8 @@ int main(int argc, char** argv)
       assert (++i < argc);
       if (strcmp(argv[i], "naive") == 0) {
         impl = impl_mmult_naive_ptr; impl_str = "mmult_naive";
+      } else if (strcmp(argv[i], "opt"  ) == 0) {
+        impl = impl_mmult_opt_ptr  ; impl_str = "mmult_opt"  ;
       } else {
         impl = NULL                 ; impl_str = "unknown"     ;
       }
@@ -251,15 +254,15 @@ int main(int argc, char** argv)
 
   /* Datasets */
   /* Allocation and initialization */
-  byte* src1 = __ALLOC_INIT_DATA(byte, matrix_a_data_size);
-  byte* src2 = __ALLOC_INIT_DATA(byte, matrix_b_data_size);
-  byte* ref  = __ALLOC_INIT_DATA(byte, data_size + 4);
-  byte* dest = __ALLOC_DATA(byte, data_size);
+  float* src1   = __ALLOC_INIT_DATA(float, matrix_a_data_size * sizeof(float));
+  float* src2   = __ALLOC_INIT_DATA(float, matrix_b_data_size * sizeof(float));
+  float* ref    = __ALLOC_INIT_DATA(float, data_size + 4);
+  float* dest   = __ALLOC_DATA(float, data_size + 4);
 
   /* Setting a guards, which is 0xdeadcafe.
      The guard should not change or be touched. */
-  __SET_GUARD(ref , data_size);
-  __SET_GUARD(dest, data_size);
+  __SET_FLOAT_GUARD(ref , data_size);
+  __SET_FLOAT_GUARD(dest, data_size);
 
   /* Generate ref data */
   /* Arguments for the functions */
@@ -310,8 +313,8 @@ int main(int argc, char** argv)
 
   /* Verfication */
   printf("  * Verifying results .... ");
-  bool match = __CHECK_MATCH(ref, dest, data_size);
-  bool guard = __CHECK_GUARD(     dest, data_size);
+  bool match = __CHECK_FLOAT_MATCH(ref, dest, data_size, 1e-5f);
+  bool guard = __CHECK_FLOAT_GUARD(     dest, data_size);
   if (match && guard) {
     printf("Success\n");
   } else if (!match && guard) {

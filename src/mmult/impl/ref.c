@@ -26,29 +26,31 @@ void* impl_ref(void* args)
     args_t* parsed_args = (args_t*)args;
 
     /* Get all the arguments */
-    register const byte* matA = parsed_args->input_a;
-    register const byte* matB = parsed_args->input_b;
-    register byte* dest = parsed_args->output;
+    register const float* matA = parsed_args->input_a;
+    register const float* matB = parsed_args->input_b;
+    register float* dest = parsed_args->output;
     register size_t rowsA = parsed_args->rowsA;
     register size_t colsA = parsed_args->colsA;
     register size_t colsB = parsed_args->colsB;
 
+    // Initialize destination matrix
+    for (size_t i = 0; i < rowsA; i++) {
+        for (size_t j = 0; j < colsB; j++) {
+            dest[i * colsB + j] = 0.0f; // Initialize to zero
+        }
+    }
+
     /* Naive matrix multiplication */
     for (register size_t i = 0; i < rowsA; i++) {
         for (register size_t j = 0; j < colsB; j++) {
-            int sum = 0;
+            float sum = 0.0f;
             for (register size_t k = 0; k < colsA; k++) {
-                int a_element = 0;
-                int b_element = 0;
-
-                // Read 4 bytes to construct the integer
-                memcpy(&a_element, matA + (i * colsA + k) * sizeof(int), sizeof(int));
-                memcpy(&b_element, matB + (k * colsB + j) * sizeof(int), sizeof(int));
+                float a_element = matA[i * colsA + k];
+                float b_element = matB[k * colsB + j];
 
                 sum += a_element * b_element;
             }
-            // Store the sum in dest
-            memcpy(dest + (i * colsB + j) * sizeof(int), &sum, sizeof(int));
+            dest[i * colsB + j] += sum;
         }
     }
 

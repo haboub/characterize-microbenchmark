@@ -10,9 +10,9 @@
 #define __INCLUDE_TYPES_H_
 
 typedef struct {
-  byte* input_a;
-  byte* input_b;
-  byte* output;
+  float* input_a;  // Pointer to the first input matrix
+  float* input_b;  // Pointer to the second input matrix
+  float* output;   // Pointer to the output matrix
 
   size_t rowsA;
   size_t colsA;
