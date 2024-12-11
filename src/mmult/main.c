@@ -67,7 +67,7 @@ int main(int argc, char** argv)
   int nthreads = 1;
   int cpu      = 0;
 
-  int nruns    = 1000;
+  int nruns    = 1;
   int nstdevs  = 3;
 
   /* Data */
@@ -303,11 +303,9 @@ int main(int argc, char** argv)
   printf("  * Invoking the implementation %d times .... ", num_runs);
   for (int i = 0; i < num_runs; i++) {
     __SET_START_TIME();
-    for (int j = 0; j < 16; j++) {
-      (*impl)(&args);
-    }
+    (*impl)(&args);
     __SET_END_TIME();
-    runtimes[i] = __CALC_RUNTIME() / 16;
+    runtimes[i] = __CALC_RUNTIME();
   }
   printf("Finished\n");
 
