@@ -54,9 +54,9 @@
 /* Include application-specific headers */
 #include "include/types.h"
 
-const int A_ROW = 25000;  // Number of rows for Matrix A
-const int A_COL_B_ROW = 30000;  // Number of columns for Matrix A and rows for Matrix B
-const int B_COL = 20000;  // Number of columns for Matrix B
+const int A_ROW = 2500;  // Number of rows for Matrix A
+const int A_COL_B_ROW = 3000;  // Number of columns for Matrix A and rows for Matrix B
+const int B_COL = 2100;  // Number of columns for Matrix B
 
 int main(int argc, char** argv)
 {
@@ -67,7 +67,7 @@ int main(int argc, char** argv)
   int nthreads = 1;
   int cpu      = 0;
 
-  int nruns    = 1;
+  int nruns    = 100;
   int nstdevs  = 3;
 
   /* Data */
